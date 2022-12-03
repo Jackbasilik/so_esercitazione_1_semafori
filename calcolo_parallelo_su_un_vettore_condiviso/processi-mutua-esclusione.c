@@ -10,8 +10,9 @@
 
 int inizializza_semafori()
 {
-    int sem_id = /* TBD: usare semget() per allocare un vettore,
-                  *      con un singolo semaforo "mutex" */
+    key_t chiave_sem = IPC_PRIVATE;
+
+    int sem_id = semget(chiave_sem, 1, IPC_CREAT | 0644); 
 
     if (sem_id < 0)
     {
@@ -20,8 +21,10 @@ int inizializza_semafori()
     }
 
     /* Valore iniziale: 1 (mutua esclusione) */
+     semctl(sem_id, 0, SETVAL, 1);
 
     /* TBD: inizializzare il mutex */
+    
 
     return sem_id;
 }
@@ -32,30 +35,24 @@ void figlio(int *vettore,
             int elemento_iniziale,
             int qta_elementi)
 {
-
-    /* TBD: aggiungere dentro questa funzione delle chiamate a
-     *      Wait_Sem() e Signal_Sem() per creare una sezione critica
-     *      e realizzare la mutua esclusione */
-
     int minimo = INT_MAX;
 
     for (int i = elemento_iniziale; i < elemento_iniziale + qta_elementi; i++)
     {
-
-        if (vettore[i] < minimo)
-        {
-
-            minimo = vettore[i];
+        if (vettore[i] < minimo){
+         minimo = vettore[i];
         }
     }
 
     printf("Figlio: Il minimo locale è %d\n", minimo);
 
-    if (minimo < *buffer)
-    {
-
+    Wait_Sem(sem_id, 0);
+    
+    if (minimo < *buffer){
         *buffer = minimo;
     }
+    
+    Signal_Sem(sem_id, 0);
 }
 
 
@@ -64,12 +61,8 @@ void padre(int *buffer,
 {
 
     /* Attesa terminazione processi figli */
-
-    /* TBD: Utilizzare wait() per attendere la terminazione dei 10 figli */
-
-    
+    wait(NULL);
 
     /* Risultato finale */
-
     printf("Padre: Il valore minimo assoluto è: %d\n", *buffer);
 }

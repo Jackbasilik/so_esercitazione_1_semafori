@@ -9,6 +9,9 @@
 #include <stdlib.h>
 
 #include "processi.h"
+#define NUM_ELEMENTI 10000 
+#define NUM_PROCESS 10
+#define ELEM_PER_PROC 1000
 
 int main()
 {
@@ -19,16 +22,15 @@ int main()
     int *vettore;
     int *buffer;
 
-    vett_id = /* TBD: usare shmget() per creare un vettore di interi su
-               *      memoria condivisa, di lunghezza pari a NUM_ELEMENTI */
+    key_t chiave_vet = IPC_PRIVATE;
+    vett_id = shmget(chiave_vet, NUM_ELEMENTI * sizeof(int), IPC_CREAT | 0644); 
 
-    if (vett_id < 0)
-    {
+     if (vett_id < 0){
         perror("Impossibile creare l'array di interi condiviso");
         exit(1);
     }
 
-    vettore = /* TBD: usare shmat() per ottenere un puntatore */
+    vettore = (int*) shmat(chiave_vet, NULL, 0);
 
     if (vettore == (void *)-1)
     {
@@ -37,19 +39,16 @@ int main()
     }
 
     /* Inizializza il vettore con numeri casuali tra 0 e INT_MAX */
-
     srand(12345);
 
     for (int i = 0; i < NUM_ELEMENTI; i++)
     {
-
         vettore[i] = rand() % INT_MAX;
-
-        //printf("%d\n", vettore[i]); // per debugging
+        printf("%d\n", vettore[i]); // per debugging
     }
 
-    buffer_id = /* TBD: usare shmget() per creare un buffer singolo su
-                 *      memoria condivisa, con un intero */
+    key_t chiave_buf = IPC_PRIVATE;
+    buffer_id = shmget(chiave_buf, sizeof(int), IPC_CREAT | 0644);
 
     if (buffer_id < 0)
     {
@@ -57,7 +56,7 @@ int main()
         exit(1);
     }
 
-    buffer = /* TBD: usare shmat() per ottenere un puntatore */
+    buffer = (int*) shmat(chiave_buf, NULL, 0);
 
     if (buffer == (void *)-1)
     {
@@ -68,35 +67,33 @@ int main()
     /* Inizializza il buffer ad INT_MAX.
      * Il valore da ricercare sarà, per definizione, minore del valore iniziale.
      */
-
     *buffer = INT_MAX;
 
 
     /* Inizializzazione semafori */
-
     sem_id = inizializza_semafori();
-
-
 
     /* Avvio dei processi figli */
 
-    /* TBD: creare 10 processi figli, ognuno dei quali dovrà eseguire
-     *      la funzione "figlio()". Alla funzione, passare come parametri:
-     *      - il puntatore al vettore
-     *      - il puntatore al buffer singolo
-     *      - l'ID del vettore di semafori
-     *      - l'indice del primo elemento da elaborare
-     *      - il numero di elementi da elaborare (1000)
-     */
+    pid_t pid[NUM_PROCESS];
 
-
-    /* Processo padre */
-
-    padre(buffer, sem_id);
-
+    for(int i=0; i<NUM_PROCESS; i++)
+    {
+        pid[i] = fork();
+        if(pid[i] == 0){
+            int elemento_iniz = i * ELEM_PER_PROC;
+            figlio(vettore, buffer, sem_id, elemento_iniz, ELEM_PER_PROC);
+            exit(0);
+         }
+         else if (pid[i] < 0){
+            perror("ERRORE FORK");
+            exit(1);
+         }
+         else {padre(buffer, sem_id);}
+            
+    }
 
     /* Deallocazione risorse IPC */
-
     semctl(sem_id, 0, IPC_RMID);
     shmctl(vett_id, IPC_RMID, 0);
     shmctl(buffer_id, IPC_RMID, 0);
