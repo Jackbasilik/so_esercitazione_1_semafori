@@ -13,6 +13,8 @@
 #define NUM_PROCESS 10
 #define ELEM_PER_PROC 1000
 
+//il programma ha un bug con l'inizializzazione del vettore la seconda volta che si avvia il proramma
+
 int main()
 {
 
@@ -30,7 +32,7 @@ int main()
         exit(1);
     }
 
-    vettore = (int*) shmat(chiave_vet, NULL, 0);
+    vettore = (int*)shmat(chiave_vet, NULL, 0);
 
     if (vettore == (void *)-1)
     {

@@ -35,6 +35,7 @@ void figlio(int *vettore,
             int elemento_iniziale,
             int qta_elementi)
 {
+    
     int minimo = INT_MAX;
 
     for (int i = elemento_iniziale; i < elemento_iniziale + qta_elementi; i++)
