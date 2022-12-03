@@ -9,8 +9,6 @@
 #include <stdlib.h>
 
 #include "processi.h"
-#define NUM_ELEMENTI 10000 
-#define NUM_PROCESS 10
 #define ELEM_PER_PROC 1000
 
 //il programma ha un bug con l'inizializzazione del vettore la seconda volta che si avvia il proramma
@@ -32,7 +30,7 @@ int main()
         exit(1);
     }
 
-    vettore = (int*)shmat(chiave_vet, NULL, 0);
+    vettore = (int*) shmat(vett_id, NULL, 0);
 
     if (vettore == (void *)-1)
     {
@@ -46,7 +44,7 @@ int main()
     for (int i = 0; i < NUM_ELEMENTI; i++)
     {
         vettore[i] = rand() % INT_MAX;
-        printf("%d\n", vettore[i]); // per debugging
+        //printf("%d\n", vettore[i]); // per debugging
     }
 
     key_t chiave_buf = IPC_PRIVATE;
@@ -58,7 +56,7 @@ int main()
         exit(1);
     }
 
-    buffer = (int*) shmat(chiave_buf, NULL, 0);
+    buffer = (int*) shmat(buffer_id, NULL, 0);
 
     if (buffer == (void *)-1)
     {
@@ -77,23 +75,24 @@ int main()
 
     /* Avvio dei processi figli */
 
-    pid_t pid[NUM_PROCESS];
-
-    for(int i=0; i<NUM_PROCESS; i++)
+    pid_t pid;
+    
+    for(int i=0; i<NUM_PROCESSI; i++)
     {
-        pid[i] = fork();
-        if(pid[i] == 0){
+        pid = fork();
+
+        if(pid == 0){
             int elemento_iniz = i * ELEM_PER_PROC;
             figlio(vettore, buffer, sem_id, elemento_iniz, ELEM_PER_PROC);
             exit(0);
          }
-         else if (pid[i] < 0){
+         else if (pid < 0){
             perror("ERRORE FORK");
             exit(1);
          }
-         else {padre(buffer, sem_id);}
-            
     }
+
+    padre(buffer, sem_id);
 
     /* Deallocazione risorse IPC */
     semctl(sem_id, 0, IPC_RMID);

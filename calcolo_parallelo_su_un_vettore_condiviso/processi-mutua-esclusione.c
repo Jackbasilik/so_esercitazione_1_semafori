@@ -22,11 +22,8 @@ int inizializza_semafori()
 
     /* Valore iniziale: 1 (mutua esclusione) */
      semctl(sem_id, 0, SETVAL, 1);
-
-    /* TBD: inizializzare il mutex */
     
-
-    return sem_id;
+     return sem_id;
 }
 
 void figlio(int *vettore,
@@ -62,7 +59,9 @@ void padre(int *buffer,
 {
 
     /* Attesa terminazione processi figli */
-    wait(NULL);
+    for (int i = 0; i < NUM_PROCESSI; i++){
+        wait(NULL);
+    }
 
     /* Risultato finale */
     printf("Padre: Il valore minimo assoluto è: %d\n", *buffer);
