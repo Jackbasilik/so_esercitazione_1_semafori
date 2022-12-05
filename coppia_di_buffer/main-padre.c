@@ -17,7 +17,9 @@ int main()
     buffer *buf2;
     int sem_id;
 
-    buf1_id = /* TBD: Creazione shared memory per il primo buffer (singolo) */
+    //creazione buffer1
+    key_t chiave_buf1 = ftok(".", 'a');
+    buf1_id = shmget(chiave_buf1, sizeof(buffer), IPC_CREAT | 0644);
 
     if (buf1_id < 0)
     {
@@ -25,7 +27,9 @@ int main()
         exit(1);
     }
 
-    buf2_id = /* TBD: Creazione shared memory per il secondo buffer (singolo) */
+    //creazione buffer2
+    key_t chiave_buf2 = ftok(".", 'b');
+    buf2_id = shmget(chiave_buf2, sizeof(buffer), IPC_CREAT | 0644);
 
     if (buf2_id < 0)
     {
@@ -33,7 +37,8 @@ int main()
         exit(1);
     }
 
-    buf1 = /* TBD: Attach shared memory del primo buffer (singolo) */
+    //acquisizione puntatore buffer1
+    buf1 = (buffer*) shmat(chiave_buf1, NULL, 0);
 
     if (buf1 == (void *)-1)
     {
@@ -41,7 +46,8 @@ int main()
         exit(1);
     }
 
-    buf2 = /* TBD: Attach shared memory del secondo buffer (singolo) */
+    //acquisizione puntatore buffer2
+    buf2 = (buffer*) shmat(chiave_buf2, NULL, 0);
 
     if (buf2 == (void *)-1)
     {
@@ -49,11 +55,13 @@ int main()
         exit(1);
     }
 
-    buf1->stato = /* TBD: inizializzazione stato buf1 */
-    buf2->stato = /* TBD: inizializzazione stato buf2 */
+    //inzializzazione buffer
+    buf1->stato = LIBERO;
+    buf2->stato = LIBERO;
 
-
-    sem_id = /* TBD: Creazione vettore semafori (spazio disponibile, messaggio disponibile) */
+    //creazione semafori
+    key_t chiave_sem = ftok(".", 'c');
+    sem_id = semget(chiave_sem, 2, IPC_CREAT | 0644);
 
     if (sem_id < 0)
     {
@@ -61,12 +69,31 @@ int main()
         exit(1);
     }
 
-    /* TBD: inizializzazione semafori */
+    semctl(sem_id, SPAZIO_DISP, SETVAL, 2);
+    semctl(sem_id, MESSAGGIO_DISP, SETVAL, 0);
 
+    //creazione processo figlio produttore
+    pid_t pid1 = fork();
 
-    /* TBD: Creare il processo produttore, fargli eseguire l'eseguibile "./main-produttore" */
+    if(pid1 == 0){
+        //il primo valore è il percorso, il secondo invece il nome dell'eseguibile, null è la fine della lista 
+        execl("./main-produttore", "main-produttore", NULL); 
+    }
+    else{
+        perror("ERRORE FORK PRODUTTORE");
+        exit(1);
+    }
 
-    /* TBD: Creare il processo consumatore, fargli eseguire l'eseguibile "./main-consumatore" */
+    //creazione processo figlio consumatore
+    pid_t pid2 = fork();
+
+    if(pid2 == 0){
+        execl("./main-consumatore", "main-consumatore", NULL);
+    }
+    else{
+        perror("ERRORE FORK CONSUMATORE");
+        exit(1);
+    }
 
 
     for (int i = 0; i < 2; i++)

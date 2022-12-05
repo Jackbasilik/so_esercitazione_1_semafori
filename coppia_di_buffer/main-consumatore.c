@@ -15,7 +15,9 @@ int main()
     buffer *buf2;
     int sem_id;
 
-    buf1_id = /* TBD: Acquisizione shared memory del primo buffer (SENZA CREAZIONE) */
+    //acquisizione buffer1
+    key_t chiave_buf1 = ftok(".", 'a');
+    buf1_id = semget(chiave_buf1, sizeof(buffer), 0);
 
     if (buf1_id < 0)
     {
@@ -23,7 +25,9 @@ int main()
         exit(1);
     }
 
-    buf2_id = /* TBD: Acquisizione shared memory del secondo buffer (SENZA CREAZIONE) */
+    //acquisizione buffer2
+    key_t chiave_buf2 = ftok(".", 'b');
+    buf2_id = semget(chiave_buf2, sizeof(buffer), 0);
 
     if (buf2_id < 0)
     {
@@ -31,17 +35,17 @@ int main()
         exit(1);
     }
 
-
-
-    buf1 = /* TBD: Attach shared memory del primo buffer */
+    //acquisizione puntarore a buffer1
+    buf1 = (buffer*) shmat(chiave_buf1, NULL, 0);
 
     if (buf1 == (void *)-1)
     {
-        perror("Errore attach SHM buf1");
+        perror("Errore attach SHM buf1(main-consumatore)");
         exit(1);
     }
 
-    buf2 = /* TBD: Attach shared memory del secondo buffer */
+    //acquisizione puntarore a buffer2
+    buf2 = (buffer*) shmat(chiave_buf2, NULL, 0);
 
     if (buf2 == (void *)-1)
     {
@@ -49,9 +53,9 @@ int main()
         exit(1);
     }
 
-
-
-    sem_id = /* TBD: Acquisizione vettore semafori (SENZA CREAZIONE NÈ INIZIALIZZAZIONE) */
+    //acquisizione semafori
+    key_t chiave_sem = ftok(".", 'c');
+    sem_id = semget(chiave_sem, 2, 0);
 
     if (sem_id < 0)
     {
